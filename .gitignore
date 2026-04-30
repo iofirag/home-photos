@@ -1,0 +1,9 @@
+/client/immich/
+
+*.env
+*.pem
+
+# cloudflared/*.pem
+# cloudflared/*.yml
+# cloudflared/*.yaml
+# cloudflared/*.json

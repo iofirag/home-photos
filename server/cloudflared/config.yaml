@@ -1,0 +1,14 @@
+tunnel: 8749f989-f8f0-4e12-bd01-12f079cbc9f1
+credentials-file: /etc/cloudflared/tunnel.json
+
+ingress:
+  - hostname: ssh-d1.aghaiofir.win
+    service: ssh://host.docker.internal:22
+
+  - hostname: photos-d1.aghaiofir.win
+    service: http://caddy:80
+
+  - hostname: health-d1.aghaiofir.win
+    service: http://caddy:80
+
+  - service: http_status:404

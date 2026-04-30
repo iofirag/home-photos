@@ -1,0 +1,26 @@
+{
+    auto_https off
+}
+
+(common_headers) {
+    header_up Host {host}
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto https
+}
+
+http://health-{$DEVICE_ID}.{$BASE_DOMAIN} {
+    respond "ok from device {$DEVICE_ID}" 200
+}
+
+http://photos-{$DEVICE_ID}.{$BASE_DOMAIN} {
+    encode zstd gzip
+
+    reverse_proxy immich-server:2283 {
+        import common_headers
+    }
+}
+
+http://{$DEVICE_ID}.{$BASE_DOMAIN} {
+    respond "unknown service on device {$DEVICE_ID}" 404
+}

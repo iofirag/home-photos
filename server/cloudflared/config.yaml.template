@@ -1,0 +1,14 @@
+tunnel: ${CLOUDFLARE_TUNNEL_ID}
+credentials-file: /etc/cloudflared/tunnel.json
+
+ingress:
+  - hostname: ssh-${DEVICE_ID}.${BASE_DOMAIN}
+    service: ssh://host.docker.internal:22
+
+  - hostname: photos-${DEVICE_ID}.${BASE_DOMAIN}
+    service: http://caddy:80
+
+  - hostname: health-${DEVICE_ID}.${BASE_DOMAIN}
+    service: http://caddy:80
+
+  - service: http_status:404
