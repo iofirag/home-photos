@@ -1,4 +1,5 @@
 /client/immich/
+/client/client-data/
 
 *.env
 *.pem

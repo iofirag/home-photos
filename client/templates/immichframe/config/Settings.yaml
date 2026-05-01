@@ -12,10 +12,10 @@ General:
 
 Accounts:
   - ImmichServerUrl: "http://immich-server:2283"
-    ApiKey: "YPFlDKrgcpt0pb2ooGD2UEQeiffJOVzoanXrqR6i2L4"
+    ApiKey: ""
     ShowFavorites: false
     ShowArchived: false
     ShowVideos: false
-    Albums:
-      - "af56d834-a7e2-463c-b762-eae9366b9e70"
-      - "a0bf492b-9325-4751-8c2e-89ecaea62b76"
+    # Albums:
+    #   - "af56d834-a7e2-463c-b762-eae9366b9e70"
+    #   - "a0bf492b-9325-4751-8c2e-89ecaea62b76"

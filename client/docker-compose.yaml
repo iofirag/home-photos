@@ -22,7 +22,7 @@ services:
       POSTGRES_DB: ${DB_DATABASE_NAME}
       POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
-      - ./immich/postgres:/var/lib/postgresql/data
+      - ./client-data/immich/postgres:/var/lib/postgresql/data
     shm_size: 128mb
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE_NAME}"]
@@ -47,8 +47,8 @@ services:
       IMMICH_TELEMETRY_INCLUDE: all
       IMMICH_EXTERNAL_URL: https://photos-${DEVICE_ID}.${BASE_DOMAIN}
     volumes:
-      - ./immich/library:/usr/src/app/upload
-      - /etc/localtime:/etc/localtime:ro
+      - ./client-data/immich/library:/usr/src/app/upload
+      # - /etc/localtime:/etc/localtime:ro
     ports:
       - "2283:2283"
     depends_on:
@@ -66,7 +66,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./client-data/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:
       - immich-server
     # ports:
@@ -80,7 +80,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./cloudflared:/etc/cloudflared:ro
+      - ./client-data/cloudflared:/etc/cloudflared:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -92,10 +92,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # environment:
+    environment:
+      ImmichServerUrl: http://immich-server:2283
       # IMMICHFRAME_CONFIG_PATH: /app/Config
     volumes:
-      - ./immichframe/Config:/app/Config:ro
+      - ./client-data/immichframe/Config:/app/Config:ro
     ports:
       - "8080:8080"
     depends_on:

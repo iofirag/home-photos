@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_DIR="${DATA_DIR:-/mnt/client-data}"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Default values
+IMMICH_API_KEY="${IMMICH_API_KEY:-}"
+ALBUMS="${ALBUMS:-}"
+
+echo "Using project dir: $PROJECT_DIR"
+echo "Using data dir: $DATA_DIR"
+
+# Create main folders
+mkdir -p "$DATA_DIR/immichframe/Config"
+
+# Generate ImmichFrame config
+SETTINGS_FILE="$DATA_DIR/immichframe/Config/Settings.yaml"
+TEMPLATE_FILE="$PROJECT_DIR/templates/immichframe/Config/Settings.yaml"
+
+# Copy template first
+cp "$TEMPLATE_FILE" "$SETTINGS_FILE"
+
+# Update ApiKey if provided
+if [ -n "$IMMICH_API_KEY" ]; then
+  sed -i "s/ApiKey: \"\"/ApiKey: \"$IMMICH_API_KEY\"/" "$SETTINGS_FILE"
+fi
+
+# Update Albums if provided
+if [ -n "$ALBUMS" ]; then
+  # Create a temp file with album IDs (6-space indentation to match template)
+  ALBUMS_TEMP=$(mktemp)
+  IFS=',' read -ra ALBUM_ARRAY <<< "$ALBUMS"
+  for album in "${ALBUM_ARRAY[@]}"; do
+    echo "      - \"$album\"" >> "$ALBUMS_TEMP"
+  done
+  
+  # Use awk to replace the Albums section
+  awk -v albums="$ALBUMS_TEMP" '
+  BEGIN { albums_file = albums }
+  /^    # Albums:$/ {
+    print "    Albums:"
+    while ((getline line < albums_file) > 0) {
+      print line
+    }
+    close(albums_file)
+    # Skip the next 2 commented lines
+    getline
+    getline
+    next
+  }
+  { print }
+  ' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+  
+  rm -f "$ALBUMS_TEMP"
+fi
+
+echo "Created ImmichFrame Settings.yaml with provided configuration."
+
+# Permissions
+CURRENT_UID="${SUDO_UID:-$(id -u)}"
+CURRENT_GID="${SUDO_GID:-$(id -g)}"
+
+sudo chown -R "$CURRENT_UID:$CURRENT_GID" "$DATA_DIR"
+
+echo ""
+echo "Init completed."
+echo "Data folder is ready at: $DATA_DIR"
