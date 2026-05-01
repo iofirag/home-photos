@@ -101,7 +101,7 @@ services:
     depends_on:
       - immich-server
 
-  # immich-kiosk:
+  # immich-kiosk: # Works
   #   image: ghcr.io/damongolding/immich-kiosk:latest
   #   container_name: immich-kiosk
   #   restart: unless-stopped
@@ -129,8 +129,7 @@ services:
   #     retries: 3
   #     start_period: 10s
 
-#################################
-  # immich-machine-learning:
+  # immich-machine-learning: # Not Tested
   #   image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
   #   container_name: immich_machine_learning
   #   restart: unless-stopped
