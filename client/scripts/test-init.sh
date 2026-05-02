@@ -1,3 +1,3 @@
 # $ DATA_DIR=./client-data ./scripts/init-client.sh
 # $ docker compose up -d
-# $ DATA_DIR=./client-data IMMICH_API_KEY="AtKROwCZsyr0q23lnR6Y7KBZ7bpjnNm3RvquSUbrY" ALBUMS="465e0a9e-6648-4f3f-9e23-423e631a3603,465e0a9e-6648-4f3f-9e23-423e631a3603" ./scripts/gen-immichframe-config.sh
+# $ DATA_DIR=./client-data IMMICH_API_KEY="X7BzBEt0sKCLtMttOOjfZUiUTqXiZO1puMQwy7xTlYg" ALBUMS="4b3fc6e9-f392-4ca8-b1ba-80c8ea7e751f,5f25498e-7de0-4ae3-91fa-836e557f3627" ./scripts/gen-immichframe-config.sh
