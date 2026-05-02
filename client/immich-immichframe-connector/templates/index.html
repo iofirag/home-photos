@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Immich Albums Viewer</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input {
+            padding: 6px;
+            margin: 5px 0;
+            width: 400px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .album {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+
+        .album-thumbnail {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Immich Albums Viewer</h1>
+
+<div>
+    <label>Immich Server URL:</label><br>
+    <input id="server_url" type="text" value="http://localhost:2283">
+</div>
+
+<div>
+    <label>API Key:</label><br>
+    <input id="api_key" type="text" placeholder="Enter your Immich API key">
+</div>
+
+<button onclick="loadAlbums()">Load Albums</button>
+
+<hr>
+
+<h2>Albums</h2>
+<div id="status"></div>
+<div id="albums"></div>
+
+<script>
+async function loadAlbums() {
+    const serverUrl = document.getElementById("server_url").value;
+    const apiKey = document.getElementById("api_key").value;
+
+    const status = document.getElementById("status");
+    const albumsDiv = document.getElementById("albums");
+
+    status.innerHTML = "Loading...";
+    albumsDiv.innerHTML = "";
+
+    try {
+        const res = await fetch("/api/albums", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                server_url: serverUrl,
+                api_key: apiKey
+            })
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text);
+        }
+
+        const albums = await res.json();
+
+        if (!Array.isArray(albums)) {
+            throw new Error("Invalid response from server");
+        }
+
+        status.innerHTML = `Loaded ${albums.length} albums`;
+
+        albums.forEach(album => {
+            const div = document.createElement("div");
+            div.className = "album";
+
+            let thumbnailHtml = "";
+            if (album.albumThumbnailAssetId) {
+                const thumbnailUrl = `${document.getElementById("server_url").value}/api/assets/${album.albumThumbnailAssetId}/thumbnail`;
+                thumbnailHtml = `<br><img src="${thumbnailUrl}" alt="Album thumbnail" class="album-thumbnail">`;
+            }
+
+            div.innerHTML = `
+                <strong>${album.albumName || "No name"}</strong><br>
+                ID: ${album.id}<br>
+                Assets: ${album.assetCount || 0}${thumbnailHtml}
+            `;
+
+            albumsDiv.appendChild(div);
+        });
+
+    } catch (err) {
+        status.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+    }
+}
+</script>
+
+</body>
+</html>
