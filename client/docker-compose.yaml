@@ -59,6 +59,22 @@ services:
     healthcheck:
       disable: false
 
+  immichframe:
+    image: ghcr.io/immichframe/immichframe:latest
+    container_name: immichframe
+    restart: unless-stopped
+    env_file:
+      - .env
+    # environment:
+      # ImmichServerUrl: http://immich-server:2283
+      # IMMICHFRAME_CONFIG_PATH: /app/Config
+    volumes:
+      - ./client-data/immichframe/Config:/app/Config:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - immich-server
+
   caddy:
     image: caddy:2-alpine
     container_name: caddy
@@ -85,22 +101,6 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - caddy
-
-  immichframe:
-    image: ghcr.io/immichframe/immichframe:latest
-    container_name: immichframe
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      ImmichServerUrl: http://immich-server:2283
-      # IMMICHFRAME_CONFIG_PATH: /app/Config
-    volumes:
-      - ./client-data/immichframe/Config:/app/Config:ro
-    ports:
-      - "8080:8080"
-    depends_on:
-      - immich-server
 
   # immich-kiosk: # Works
   #   image: ghcr.io/damongolding/immich-kiosk:latest
