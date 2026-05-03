@@ -59,21 +59,38 @@ services:
     healthcheck:
       disable: false
 
-  # immichframe:
-  #   image: ghcr.io/immichframe/immichframe:latest
-  #   container_name: immichframe
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   # environment:
-  #     # ImmichServerUrl: http://immich-server:2283
-  #     # IMMICHFRAME_CONFIG_PATH: /app/Config
-  #   volumes:
-  #     - ./client-data/immichframe/Config:/app/Config:ro
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - immich-server
+  immichframe:
+    image: ghcr.io/immichframe/immichframe:latest
+    container_name: immichframe
+    restart: unless-stopped
+    env_file:
+      - .env
+    # environment:
+      # ImmichServerUrl: http://immich-server:2283
+      # IMMICHFRAME_CONFIG_PATH: /app/Config
+    volumes:
+      - ./client-data/immichframe/Config:/app/Config:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      - immich-server
+
+  immichframe-config-updater:
+    build: ./immichframe-config-updater
+    container_name: immichframe-config-updater
+    restart: unless-stopped
+    environment:
+      IMMICH_SERVER_URL: http://immich-server:2283
+      IMMICHFRAME_CONTAINER_NAME: immichframe
+      IMMICHFRAME_CONFIG_DIR: /data/immichframe/Config
+    volumes:
+      - ./client-data/immichframe/Config:/data/immichframe/Config
+      - ./templates/immichframe/config:/app/templates/immichframe/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8081"
+    depends_on:
+      - immich-server
 
   caddy:
     image: caddy:2-alpine
