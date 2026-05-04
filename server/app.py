@@ -153,9 +153,14 @@ def create_dns_records(tunnel_id: str, device_id: str) -> None:
 
 def generate_client_package(tunnel_token: str, device_id: str) -> None:
     package_dir = Path("packages") / device_id
-    package_dir.mkdir(parents=True, exist_ok=True)
+    if package_dir.exists():
+        shutil.rmtree(package_dir)
+    # package_dir.mkdir(parents=True, exist_ok=True)
 
-    env_content = f"""
+    shutil.copytree(Path("templates"), package_dir)
+
+    extra_env_content = f"""
+
 # =========================
 # Client
 # =========================
@@ -166,31 +171,10 @@ DEVICE_ID={device_id}
 # =========================
 CLOUDFLARE_TUNNEL_TOKEN={tunnel_token}
 BASE_DOMAIN={settings.base_domain}
-
-# =========================
-# Immich
-# =========================
-# Public Immich URL
-TZ=Asia/Jerusalem
-DB_HOSTNAME=database
-DB_USERNAME=postgres
-DB_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
-DB_DATABASE_NAME=immich
-IMMICH_CONTAINER_NAME=immich-server
-IMMICH_PORT=2283
-
-# =========================
-# ImmichFrame
-# =========================
-IMMICHFRAME_CONTAINER_NAME=immichframe
 """
-
-    (package_dir / ".env").write_text(env_content, encoding="utf-8")
-
-    template_path = Path("templates") / "docker-compose.yaml"
-    output_path = package_dir / "docker-compose.yaml"
-
-    shutil.copyfile(template_path, output_path)
+    env_file = package_dir / ".env"
+    with env_file.open("a", encoding="utf-8") as f:
+        f.write(extra_env_content)
 
     print(f"Generated client package: {package_dir}")
 

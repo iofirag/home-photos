@@ -88,7 +88,7 @@ def create_immich_configuration():
     try:
 
         base_dir = Path(__file__).resolve().parent
-        template_path = base_dir / "immichframe-config-template" / "config" / "Settings.yaml"
+        template_path = base_dir / "immichframe-config-template" / "Settings.yaml"
         
         # Use environment variable for output directory, fallback to parent/client-data
         config_output_dir = os.getenv("IMMICHFRAME_CONFIG_DIR")
