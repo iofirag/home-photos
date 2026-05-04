@@ -1,5 +1,5 @@
 # $ DATA_DIR=./client-data ./scripts/init-client.sh
-# $ docker compose up --build -d
+$ docker compose up --build -d
 
 
 # not needed

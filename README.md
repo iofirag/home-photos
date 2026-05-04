@@ -18,3 +18,13 @@ immich albums slide show service.
 
 TODO:
 How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
+
+===========
+How to run:
+===========
+cd server
+py app.py
+
+# copy gen files to /client folder
+cd client
+docker compose up --build -d
