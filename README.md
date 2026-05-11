@@ -49,3 +49,9 @@ py app.py <client-id>
 # copy gen files from `server/packages/<client-id>` to `client` folder
 cd client
 docker compose up --build -d
+
+==============
+remote access:
+==============
+ssh vboxuser@10.0.0.144
+ssh -o ProxyCommand="cloudflared access ssh --hostname %h" vboxuser@ssh-d15.aghaiofir.win
