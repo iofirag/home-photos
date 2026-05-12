@@ -4,16 +4,14 @@ each client buy my device and power it on in their home.
 ### on device powered on:
 
 #### check for internet connection availability
-ping 8.8.8.8
+NO internet (WiFi + Ethernet down)
+    → start hotspot
 
-#### internet connection available:
-    continue to claim process
-#### no internet:
-    it should turn on hotspot (for let user connect the device to wifi by opening a "connecting to internet" webpage).
-    
-    when internet becomes available (wifi/lan):
-        stop hotspot
-        continue to claim process
+Ethernet plugged in OR WiFi connected
+    → stop hotspot immediately
+
+Internet available
+    → start claim process
 
 ### claim process:
     user can claim and add the device to his account by a short time code.
