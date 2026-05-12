@@ -1,9 +1,81 @@
 i have clients
-each client buy my computer and should run it in their home
-this computer should have onboarding step
+each client buy my device and power it on in their home.
 
+### on device powered on:
+    check for internet connection availability
+    internet connection available:
+        continue to claim process
+    no internet:
+        it should turn on hotspot (for let user connect the device to wifi by opening a connecting to internet webpage).
+        
+        when internet becomes available (wifi/lan):
+            stop hotspot
+            continue to claim process
+
+### claim process:
+    user can claim and add the device to his account by a short time code.
+
+### on claiming success:
+    Server creates Cloudflare tunnel
+    Server configures ingress + DNS
+    Server generates package files
+    server will generate dedicated client unique files.
+    server compress all client files
+    server upload zip file to public location.
+    server will let client download the files
+    server will ignore the downloaded files
+
+### device understand it can start download the files:
+    the device start download the compressed files
+    open them - and run the install script
+
+### install process:
+    device will run the install script
+    in the install script it should install dependencies like: docker / git
+    make the docker compose file run on boot
+
+### on install finish:
+    device should run `docker compose up -d`
+    the device will supply all docker-compose.yaml services in their network
+
+
+
+# remote access:
+admin can use the client tunnel connection to access remotely to device terminal.
+`ssh -o ProxyCommand="cloudflared access ssh --hostname %h" <device-os-user>@ssh-<client-id>.<my-domain.com>`
+
+
+questions:
+should i change something for better solution?
+if no -
+how to make each step in production level?
+what is the minimal OS should i install on the device?
+
+
+# How to run:
+`cd server`
+`py app.py <client-id>`
+copy gen files from `server/packages/<client-id>` to `client` folder
+`cd client`
+`docker compose up -d`
+
+
+
+
+
+
+
+
+
+
+
+
+#### TODO:
+How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
+
+###### OLD ######
 onboarding step:
-user will connect it to his local network / wifi
+will  it to his local network / wifi
 validate internet is available
 do OTP authentication with my server
 
@@ -37,21 +109,6 @@ each client should not see the other clients computer (client isolation)
 immichframe:
 immich albums slide show service.
 
-TODO:
-How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
-
-===========
-How to run:
-===========
-cd server
-py app.py <client-id>
-
-# copy gen files from `server/packages/<client-id>` to `client` folder
-cd client
-docker compose up --build -d
-
-==============
-remote access:
-==============
 ssh vboxuser@10.0.0.144
-ssh -o ProxyCommand="cloudflared access ssh --hostname %h" vboxuser@ssh-d15.aghaiofir.win
+debugging: `docker compose up --build -d`
+`aghaiofir.win`

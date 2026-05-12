@@ -1,0 +1,56 @@
+i have clients
+each client buy my device and power it on in their home.
+
+### on device powered on:
+
+#### check for internet connection availability
+ping 8.8.8.8
+
+#### internet connection available:
+    continue to claim process
+#### no internet:
+    it should turn on hotspot (for let user connect the device to wifi by opening a "connecting to internet" webpage).
+    
+    when internet becomes available (wifi/lan):
+        stop hotspot
+        continue to claim process
+
+### claim process:
+    user can claim and add the device to his account by a short time code.
+    send unique data to server hello
+    server will respond with short time code
+    user type this code in his account
+
+### on claiming success:
+    Server creates Cloudflare tunnel
+    Server configures ingress + DNS
+    Server generates client package files
+    server compress all client files to a .zip
+    server upload zip file to public location.
+    server will let client download the files
+    server will ignore the downloaded files
+
+### device understand it can start download the files:
+    the device start download the compressed files
+    open them - and run the install script
+
+### install process:
+    device will run the install script
+    in the install script it should install dependencies like: docker / git
+    make the docker compose file run on boot
+
+### on install finish:
+    device should run `docker compose up -d`
+    the device will supply all docker-compose.yaml services in local network
+
+
+# remote access:
+admin can use the client tunnel connection to access remotely to device terminal.
+`ssh -o ProxyCommand="cloudflared access ssh --hostname %h" <device-os-user>@ssh-<client-id>.<my-domain.com>`
+
+
+questions:
+should i change something for better solution?
+if no -
+how to make each step in production level?
+what is the minimal OS should i install on the device?
