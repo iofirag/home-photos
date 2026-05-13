@@ -2,25 +2,26 @@
 
 set -e
 
-echo "=== NET-GATE FULL INSTALL ==="
+echo "======================================="
+echo "NET-GATE + RaspAP INSTALLER"
+echo "======================================="
 
 # --------------------------------------------------
-# SYSTEM UPDATE
+# UPDATE SYSTEM
 # --------------------------------------------------
 sudo apt update
 sudo apt upgrade -y
 
 # --------------------------------------------------
-# INSTALL PACKAGES
+# INSTALL REQUIRED PACKAGES
 # --------------------------------------------------
 sudo apt install -y \
   curl \
-  hostapd \
-  dnsmasq \
-  nginx \
-  network-manager \
   iw \
   rfkill \
+  dnsmasq \
+  hostapd \
+  network-manager \
   net-tools \
   iproute2 \
   python3
@@ -89,7 +90,7 @@ dhcp-range=10.3.141.50,10.3.141.200,255.255.255.0,24h
 dhcp-option=3,10.3.141.1
 dhcp-option=6,10.3.141.1
 
-# Redirect ALL DNS to onboarding portal
+# Redirect ALL DNS requests to portal
 address=/#/10.3.141.1
 
 # Captive portal triggers
@@ -101,7 +102,7 @@ address=/www.msftconnecttest.com/10.3.141.1
 EOF
 
 # --------------------------------------------------
-# STATIC IP FOR HOTSPOT
+# CONFIGURE STATIC IP FOR HOTSPOT
 # --------------------------------------------------
 sudo ip link set wlan0 down || true
 sudo ip addr flush dev wlan0 || true
@@ -109,31 +110,34 @@ sudo ip addr add 10.3.141.1/24 dev wlan0
 sudo ip link set wlan0 up
 
 # --------------------------------------------------
-# ENABLE SERVICES
+# ENABLE REQUIRED SERVICES
 # --------------------------------------------------
 sudo systemctl enable hostapd
 sudo systemctl enable dnsmasq
-sudo systemctl enable nginx
+sudo systemctl enable lighttpd
 
 # --------------------------------------------------
-# ONBOARDING HTML PAGE
+# CREATE ONBOARDING PORTAL PAGE
 # --------------------------------------------------
 sudo mkdir -p /var/www/html
 
-sudo tee /var/www/html/index.html > /dev/null <<'EOF'
+sudo tee /var/www/html/index.php > /dev/null <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>NET-GATE Setup</title>
 
 <style>
+
 body{
     margin:0;
-    padding:0;
-    font-family:Arial,sans-serif;
     background:#f4f7fb;
+    font-family:Arial,sans-serif;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -141,8 +145,8 @@ body{
 }
 
 .card{
-    background:white;
     width:340px;
+    background:white;
     padding:30px;
     border-radius:18px;
     box-shadow:0 10px 30px rgba(0,0,0,0.12);
@@ -156,7 +160,7 @@ h1{
 
 p{
     color:#666;
-    margin-bottom:25px;
+    margin-bottom:20px;
 }
 
 input{
@@ -181,7 +185,7 @@ button{
 }
 
 button:hover{
-    opacity:0.92;
+    opacity:0.95;
 }
 
 .footer{
@@ -189,7 +193,9 @@ button:hover{
     font-size:12px;
     color:#999;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -229,7 +235,7 @@ Device onboarding portal
 EOF
 
 # --------------------------------------------------
-# CREATE CONFIG STORAGE
+# NET-GATE CONFIG STORAGE
 # --------------------------------------------------
 sudo mkdir -p /etc/net-gate
 
@@ -239,14 +245,14 @@ FAIL_THRESHOLD=3
 EOF
 
 # --------------------------------------------------
-# CREATE CLAIM PLACEHOLDER
+# CLAIM PLACEHOLDER
 # --------------------------------------------------
 cat <<EOF > /home/pi/claim.py
 print("Claim process started")
 EOF
 
 # --------------------------------------------------
-# INSTALL NET-GATE SCRIPT
+# NET-GATE SCRIPT
 # --------------------------------------------------
 sudo tee /usr/local/bin/net-gate.sh > /dev/null <<'EOF'
 #!/bin/bash
@@ -277,11 +283,13 @@ start_hotspot() {
 
     log "starting hotspot"
 
-    sudo systemctl restart dnsmasq
-    sudo systemctl restart hostapd
-
+    sudo ip link set wlan0 down || true
     sudo ip addr flush dev wlan0 || true
     sudo ip addr add 10.3.141.1/24 dev wlan0
+    sudo ip link set wlan0 up
+
+    sudo systemctl restart dnsmasq
+    sudo systemctl restart hostapd
 
     HOTSPOT_ON=1
 }
@@ -342,19 +350,19 @@ sudo chmod +x /usr/local/bin/net-gate.sh
 # --------------------------------------------------
 # RESTART SERVICES
 # --------------------------------------------------
-sudo systemctl restart nginx
+sudo systemctl restart lighttpd
 sudo systemctl restart dnsmasq
 sudo systemctl restart hostapd
 
 echo ""
-echo "=================================="
+echo "======================================="
 echo "INSTALL COMPLETE"
-echo "=================================="
+echo "======================================="
 echo ""
 echo "SSID: NET-GATE-SETUP"
 echo "PASSWORD: 12345678"
 echo "PORTAL: http://10.3.141.1"
 echo ""
-echo "RUN:"
+echo "START WITH:"
 echo "sudo /usr/local/bin/net-gate.sh"
 echo ""
