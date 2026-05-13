@@ -2,15 +2,24 @@ i have clients
 each client buy my device and power it on in their home.
 
 ### on device powered on:
+Check for internet connection availability:
+By a success response from https://clients3.google.com/generate_204 
+
+NO internet (WiFi + Ethernet down) 
+    → start hotspot (with Captive portal)
+
+Internet available 
+    → stop hotspot immediately 
+    → start claim process
 
 #### check for internet connection availability
+Check curl to google.com retrieve 200 OK
+
 NO internet (WiFi + Ethernet down)
     → start hotspot
 
-Ethernet plugged in OR WiFi connected
-    → stop hotspot immediately
-
 Internet available
+    → stop hotspot immediately
     → start claim process
 
 ### claim process:
