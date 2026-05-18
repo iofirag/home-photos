@@ -13,13 +13,12 @@ sudo apt-get install -y \
   curl \
   git
 
-# reconfigure NetworkManager enable & running
+# Reconfigure NetworkManager enable & running
 sudo systemctl enable NetworkManager
 sudo systemctl start NetworkManager
-# Verify NetworkManager is running
-systemctl status NetworkManager
-# Check wifi device is managed
-nmcli device status # stuck the install
+# Configure dnsmasq to not interfere with NetworkManager
+sudo systemctl stop dnsmasq
+sudo systemctl disable dnsmasq
 
 # Install Docker using the official script
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -42,7 +41,13 @@ sudo docker build -t wifi-connect -f Dockerfile.template .
 # Check supported WiFi modes (for debugging)
 iw list | grep -A 20 "Supported interface modes"
 
-# # copyt provistion.sh to /usr/local/bin and make it executable
+
+# Verify NetworkManager is running
+# systemctl status NetworkManager
+# Check wifi device is managed
+# nmcli device status # stuck the install
+
+# # copy provistion.sh to /usr/local/bin and make it executable
 # sudo cp provision.sh /usr/local/bin/provision
 # sudo chmod +x /usr/local/bin/provision
 # # make it service
