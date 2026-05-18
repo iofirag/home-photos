@@ -16,6 +16,7 @@ sudo apt upgrade -y
 # INSTALL REQUIRED PACKAGES
 # --------------------------------------------------
 sudo apt install -y \
+  git
   curl \
   iw \
   rfkill \
@@ -63,6 +64,7 @@ channel=6
 ieee80211n=1
 wmm_enabled=1
 
+macaddr_acl=0
 auth_algs=1
 ignore_broadcast_ssid=0
 
@@ -269,10 +271,6 @@ log() {
 is_internet() {
 
     if curl -s --head --max-time 3 https://google.com | grep -q "200"; then
-        return 0
-    fi
-
-    if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
         return 0
     fi
 
