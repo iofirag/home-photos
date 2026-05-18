@@ -2,17 +2,24 @@
 
 # Install prerequisites: curl, git, and Docker
 sudo apt-get update
+
+
 sudo apt-get install -y \
-  curl \
-  git \
-  iw \
+  network-manager \
   dnsmasq \
+  iw \
   iproute2 \
   iputils-ping \
-  network-manager
+  curl \
+  git
 
+# reconfigure NetworkManager enable & running
+sudo systemctl enable NetworkManager
+sudo systemctl start NetworkManager
 # Verify NetworkManager is running
-sudo systemctl enable --now NetworkManager
+systemctl status NetworkManager
+# Check wifi device is managed
+nmcli device status # stuck the install
 
 # Install Docker using the official script
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -34,6 +41,14 @@ sudo docker build -t wifi-connect -f Dockerfile.template .
 
 # Check supported WiFi modes (for debugging)
 iw list | grep -A 20 "Supported interface modes"
+
+# # copyt provistion.sh to /usr/local/bin and make it executable
+# sudo cp provision.sh /usr/local/bin/provision
+# sudo chmod +x /usr/local/bin/provision
+# # make it service
+# sudo cp provision.service /etc/systemd/system/provision.service
+# sudo systemctl enable provision.service
+# sudo systemctl start provision.service
 
 # Start the wifi-connect container
 # echo "Starting wifi-connect..."

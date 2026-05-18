@@ -59,6 +59,14 @@ copy gen files from `server/packages/<client-id>` to `client` folder
 `cd client`
 `docker compose up -d`
 
+client:
+connect to internet
+copy paste script:
+- init.sh
+- provision.sh
+run init.sh
+disconnect from internet
+manual test - run provision.sh
 
 
 
