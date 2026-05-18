@@ -30,7 +30,7 @@ start_hotspot() {
 
   log "Starting WiFi hotspot (wifi-connect)..."  
   echo "Starting wifi-connect..."
-  docker run --rm -it \
+  docker run -it \
     --name "$WIFI_CONNECT_NAME" \
     --network host \
     --privileged \
