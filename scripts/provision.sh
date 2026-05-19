@@ -20,13 +20,9 @@ start_hotspot() {
     return
   fi
 
-#   log "Starting WiFi hotspot (wifi-connect)..."
-#   docker run -d \
-#     --restart unless-stopped \
-#     --net=host \
-#     --privileged \
-#     --name "$WIFI_CONNECT_NAME" \
-#     balenablocks/wifi-connect:aarch64
+  # restart and turn on wifi
+  sudo systemctl restart NetworkManager
+  nmcli radio wifi on
 
   log "Starting WiFi hotspot (wifi-connect)..."  
   echo "Starting wifi-connect..."
