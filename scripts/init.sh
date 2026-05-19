@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Install prerequisites: curl, git, and Docker
+# This script initializes the environment for running the wifi-connect Docker container.
+# It installs necessary dependencies, sets up NetworkManager, and builds the Docker image.
+
+# Update package lists
 sudo apt-get update
 
-
+# Install prerequisites: curl, git, and Docker
 sudo apt-get install -y \
   network-manager \
   dnsmasq \
@@ -25,7 +28,10 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 
-# Verify directory does not exist before cloning
+# Remove Docker installation script after use
+rm -f get-docker.sh
+
+# Remove any existing wifi-connect directory to avoid duplication
 rm -rf wifi-connect
 # Clone the (Fixed) Balena wifi-connect repository
 git clone https://github.com/balena-os/wifi-connect.git
@@ -38,8 +44,29 @@ git checkout -b fix/dockerfile robot-com-projects/fix/dockerfile
 echo "Building and deploying the wifi-connect Docker container..."
 sudo docker build -t wifi-connect -f Dockerfile.template .
 
+# Remove the cloned wifi-connect directory after Docker image is built
+cd ..
+rm -rf wifi-connect
+
 # Check supported WiFi modes (for debugging)
-iw list | grep -A 20 "Supported interface modes"
+echo "Setup completed successfully!"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# iw list | grep -A 20 "Supported interface modes"
 
 
 # Verify NetworkManager is running
