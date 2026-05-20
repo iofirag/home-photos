@@ -25,12 +25,13 @@ def validate_device_id(device_id: str) -> str | None:
     return None
 
 
-def cloudflare_request(method: str, url: str, payload: dict | None = None) -> dict:
+def cloudflare_request(method: str, url: str, payload: dict | None = None, params: dict | None = None) -> dict:
     response = requests.request(
         method=method,
         url=url,
         headers=HEADERS,
         json=payload,
+        params=params,
         timeout=30,
     )
 
@@ -54,7 +55,32 @@ def cloudflare_request(method: str, url: str, payload: dict | None = None) -> di
     return data
 
 
+def get_existing_tunnel(device_id: str) -> dict | None:
+    tunnel_name = device_id
+    url = f"{BASE_URL}/accounts/{settings.cloudflare_account_id}/cfd_tunnel"
+
+    data = cloudflare_request("GET", url, params={"name": tunnel_name, "is_deleted": "false"})
+    tunnels = data.get("result", [])
+
+    if not tunnels:
+        return None
+
+    return tunnels[0]
+
+
+def get_tunnel_token(tunnel_id: str) -> str:
+    url = f"{BASE_URL}/accounts/{settings.cloudflare_account_id}/cfd_tunnel/{tunnel_id}/token"
+    data = cloudflare_request("GET", url)
+    return data["result"]
+
+
 def create_remote_tunnel(device_id: str) -> tuple[str, str]:
+    existing = get_existing_tunnel(device_id)
+
+    if existing:
+        tunnel_id = existing["id"]
+        return tunnel_id, get_tunnel_token(tunnel_id)
+
     tunnel_name = device_id
     url = f"{BASE_URL}/accounts/{settings.cloudflare_account_id}/cfd_tunnel"
 
