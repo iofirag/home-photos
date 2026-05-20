@@ -1,5 +1,6 @@
 import os
 import tarfile
+import time
 from flask import Flask, json, send_file, jsonify, request
 from config import settings
 from cloudflare_service import create_client_tunnel, validate_device_id
@@ -21,14 +22,19 @@ def create_app():
     def download_client_app():
         tar_path = "./cache/client-template-files.tar.gz"
         template_dir = "./client-template-files"
+        max_cache_age_seconds = 60 * 60
 
         os.makedirs(os.path.dirname(tar_path), exist_ok=True)
 
-        try:
-            with tarfile.open(tar_path, "w:gz") as tar:
-                tar.add(template_dir, arcname="client-template-files")
-        except Exception as e:
-            return jsonify({"error": f"Failed to create tar.gz: {str(e)}"}), 500
+        file_exists = os.path.exists(tar_path)
+        file_is_stale = file_exists and (time.time() - os.path.getmtime(tar_path)) > max_cache_age_seconds
+
+        if not file_exists or file_is_stale:
+            try:
+                with tarfile.open(tar_path, "w:gz") as tar:
+                    tar.add(template_dir, arcname="client-template-files")
+            except Exception as e:
+                return jsonify({"error": f"Failed to create tar.gz: {str(e)}"}), 500
 
         # Send the tar.gz file
         try:
