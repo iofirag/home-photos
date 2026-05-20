@@ -4,6 +4,8 @@
 *.env
 *.pem
 
+/server/cache
+
 # cloudflared/*.pem
 # cloudflared/*.yml
 # cloudflared/*.yaml

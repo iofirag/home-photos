@@ -1,2 +1,4 @@
+flask
 pydantic-settings
 python-dotenv
+requests
