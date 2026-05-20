@@ -73,6 +73,7 @@ store all app in 1 directory
 uploading images to usb
 How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
 reverse proxy instead of caddy ?
+V (using without ip) - http://home-photos:8080/
 
 ###### OLD ######
 onboarding step:
