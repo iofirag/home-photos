@@ -22,15 +22,13 @@ def create_app():
         tar_path = "./cache/client-template-files.tar.gz"
         template_dir = "./client-template-files"
 
-        # Check if the tar.gz file exists
-        if not os.path.exists(tar_path):
-            print("Tar.gz file not found. Creating a new one...")
-            # Create tar.gz if it does not exist
-            try:
-                with tarfile.open(tar_path, "w:gz") as tar:
-                    tar.add(template_dir, arcname="client-template-files")
-            except Exception as e:
-                return jsonify({"error": f"Failed to create tar.gz: {str(e)}"}), 500
+        os.makedirs(os.path.dirname(tar_path), exist_ok=True)
+
+        try:
+            with tarfile.open(tar_path, "w:gz") as tar:
+                tar.add(template_dir, arcname="client-template-files")
+        except Exception as e:
+            return jsonify({"error": f"Failed to create tar.gz: {str(e)}"}), 500
 
         # Send the tar.gz file
         try:

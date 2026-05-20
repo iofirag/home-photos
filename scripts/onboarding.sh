@@ -9,6 +9,9 @@ INTERVAL=5
 SERVER_URL="10.0.0.114:5000" # "aghaiofir.win"
 CLIENT_TEMPLATE_ARCHIVE="client-template-files.tar.gz"
 CLIENT_APP_DIR="/client-app"
+PROVISION_MARKER="$CLIENT_APP_DIR/.provisioned"
+POSTGRES_UID="999"
+POSTGRES_GID="999"
 
 log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
@@ -67,6 +70,7 @@ create_client_tunnel() {
   # get mac address
   MAC_ADDRESS=$(ip link show | awk '/ether/ {print $2}' | head -n 1)
   DEVICE_ID=$(printf '%s' "$MAC_ADDRESS" | tr ':' '-')
+  ENV_EXAMPLE_FILE="$CLIENT_APP_DIR/.env.example"
   ENV_FILE="$CLIENT_APP_DIR/.env"
   RESPONSE_FILE=$(mktemp)
 
@@ -77,13 +81,22 @@ create_client_tunnel() {
     -o "$RESPONSE_FILE" \
     || { rm -f "$RESPONSE_FILE"; log "Create client tunnel request failed"; return 1; }
 
+  if [ ! -f "$ENV_EXAMPLE_FILE" ]; then
+    rm -f "$RESPONSE_FILE"
+    log "Missing env example file: $ENV_EXAMPLE_FILE"
+    return 1
+  fi
+
+  cp "$ENV_EXAMPLE_FILE" "$ENV_FILE"
   if [ -s "$ENV_FILE" ]; then
     printf '\n' >> "$ENV_FILE"
   fi
   tr -d '{}"' < "$RESPONSE_FILE" \
-    | awk -v RS=',' -F':' '{
-        key=$1
-        value=$2
+    | awk -v RS=',' '{
+        separator=index($0, ":")
+        if (separator == 0) next
+        key=substr($0, 1, separator - 1)
+        value=substr($0, separator + 1)
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
         if (key != "") print key "=" value
@@ -92,15 +105,26 @@ create_client_tunnel() {
   rm -f "$RESPONSE_FILE"
 }
 
+prepare_app_data() {
+  log "Preparing application data directories..."
+  sudo mkdir -p \
+    "$CLIENT_APP_DIR/client-data/immich/library" \
+    "$CLIENT_APP_DIR/client-data/immich/postgres" \
+    "$CLIENT_APP_DIR/client-data/immichframe/Config"
+
+  sudo chown -R "$POSTGRES_UID:$POSTGRES_GID" "$CLIENT_APP_DIR/client-data/immich/postgres"
+}
+
 start_app() {
   log "Starting application..."
   if [ ! -d "$CLIENT_APP_DIR" ]; then
     log "Client app directory not found: $CLIENT_APP_DIR"
     return 1
   fi
+  prepare_app_data
   (
     cd "$CLIENT_APP_DIR"
-    docker compose up -d
+    sudo docker compose up -d
   )
 }
 
@@ -122,9 +146,14 @@ while true; do
     log "Internet detected"
     stop_hotspot
     # claim_device
-    download_application_files
-    create_client_tunnel
-    start_app
+    if [ ! -f "$PROVISION_MARKER" ]; then
+      download_application_files
+      create_client_tunnel
+      start_app
+      touch "$PROVISION_MARKER"
+    else
+      log "App already provisioned; skipping setup"
+    fi
   else
     log "No internet detected - starting hotspot"
     start_hotspot
