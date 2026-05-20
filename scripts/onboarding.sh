@@ -50,6 +50,10 @@ claim_device() {
     || log "Claim request failed"
 }
 
+download_application_files() {
+  
+}
+
 reset_network() {
   log "Resetting wifi network"
   # Add any necessary commands to reset the network here
