@@ -61,10 +61,11 @@
 <div id="albums"></div>
 
 <script>
+
+const serverUrl = `http://${location.hostname}:2283`;
+
 async function loadAlbums() {
     const apiKey = document.getElementById("api_key").value;
-    const serverUrl = "http://immich-server:2283";
-
     const status = document.getElementById("status");
     const albumsDiv = document.getElementById("albums");
 
@@ -103,7 +104,7 @@ async function loadAlbums() {
             const checkboxId = `album-checkbox-${album.id}`;
             let thumbnailHtml = "";
             if (album.albumThumbnailAssetId) {
-                const thumbnailUrl = `http://localhost:2283/api/assets/${album.albumThumbnailAssetId}/thumbnail`;
+                const thumbnailUrl = `http://${location.hostname}:2283/api/assets/${album.albumThumbnailAssetId}/thumbnail`;
                 thumbnailHtml = `<br><img src="${thumbnailUrl}" alt="Album thumbnail" class="album-thumbnail" data-asset-id="${album.albumThumbnailAssetId}">`;
             }
 
@@ -125,7 +126,6 @@ async function loadAlbums() {
 }
 
 async function createImmichConfiguration() {
-    const serverUrl = "http://localhost:2283";
     const apiKey = document.getElementById("api_key").value;
     const status = document.getElementById("status");
 
