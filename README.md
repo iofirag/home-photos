@@ -58,6 +58,9 @@ copy `/scripts` to client
 `sudo sh install.sh`
 (disconnect from internet)
 on boot -> `sudo sh onboarding.sh`
+navigate to `http://home-photos:8080,8081,2283`
+
+# reset device
 reset -> `sudo sh reset.sh`
 
 
@@ -73,7 +76,7 @@ store all app in 1 directory
 uploading images to usb
 How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
 reverse proxy instead of caddy ?
-V (using without ip) - http://home-photos:8080/
+V (using without ip) - http://home-photos:<port>
 
 ###### OLD ######
 onboarding step:

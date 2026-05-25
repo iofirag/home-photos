@@ -6,6 +6,9 @@
 
 /server/cache
 
+**/*/__pycache__/
+**/*/*.pyc
+
 # cloudflared/*.pem
 # cloudflared/*.yml
 # cloudflared/*.yaml
