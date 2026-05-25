@@ -7,12 +7,62 @@ import docker
 app = Flask(__name__)
 
 
-def restart_immichframe_container():
+def restart_immichframe_container_with_docker():
     client = docker.from_env()
     container_name = os.getenv("IMMICHFRAME_CONTAINER_NAME", "immichframe")
     container = client.containers.get(container_name)
     container.restart()
     return container_name
+
+
+def restart_immichframe_container_with_proxmox():
+    from proxmoxer import ProxmoxAPI, ResourceException
+
+    try:
+        proxmox_host = os.getenv("PROXMOX_HOST")
+        proxmox_user = os.getenv("PROXMOX_USER")
+        proxmox_token = os.getenv("PROXMOX_TOKEN")
+        proxmox_token_name = os.getenv("PROXMOX_TOKEN_NAME")
+        proxmox_ctid = int(os.getenv("PROXMOX_TARGET_CONTAINER_ID"))
+        proxmox_verify_ssl = os.getenv("PROXMOX_VERIFY_SSL", "false").lower() in ('true', '1')
+
+        proxmox = ProxmoxAPI(
+            proxmox_host,
+            user=proxmox_user,
+            token_name=proxmox_token_name,
+            token_value=proxmox_token,
+            verify_ssl=proxmox_verify_ssl,
+        )
+
+        node = find_lxc_node(proxmox, proxmox_ctid)
+        proxmox.nodes(node).lxc(proxmox_ctid).status.post("reboot")
+        return f"Restarted Proxmox LXC {proxmox_ctid} on {node}"
+    except ResourceException as error:
+        raise RuntimeError(f"Failed to restart Proxmox LXC {proxmox_ctid}: {error}") from error
+
+
+def restart_immichframe_container():
+    if os.getenv("PROXMOX_HOST"):
+        return restart_immichframe_container_with_proxmox()
+
+    return restart_immichframe_container_with_docker()
+
+
+def find_lxc_node(proxmox, ctid):
+    for resource in proxmox.cluster.resources.get(type="vm"):
+        if resource.get("vmid") == ctid and resource.get("type") == "lxc":
+            return resource["node"]
+
+    for node in proxmox.nodes.get():
+        node_name = node["node"]
+        for lxc in proxmox.nodes(node_name).lxc.get():
+            if lxc.get("vmid") == ctid:
+                return node_name
+
+    raise RuntimeError(
+        f"Could not find LXC {ctid}. Grant the API token permission to list "
+        "cluster resources, nodes, and LXCs."
+    )
 
 
 @app.route("/")
