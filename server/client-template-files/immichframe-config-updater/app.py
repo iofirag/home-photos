@@ -65,9 +65,45 @@ def find_lxc_node(proxmox, ctid):
     )
 
 
+def get_immichframe_settings_path(config_dir):
+    config_dir = Path(config_dir)
+    yaml_path = config_dir / "Settings.yaml"
+    yml_path = config_dir / "Settings.yml"
+
+    if yaml_path.exists():
+        return yaml_path
+
+    if yml_path.exists():
+        return yml_path
+
+    return yaml_path
+
+
+def get_existing_immich_api_key():
+    config_dir = os.getenv("IMMICHFRAME_CONFIG_DIR")
+    if not config_dir:
+        return ""
+
+    config_path = get_immichframe_settings_path(config_dir)
+    if not config_path.exists():
+        return ""
+
+    with open(config_path, "r", encoding="utf-8") as config_file:
+        for line in config_file:
+            if line.lstrip().startswith("ApiKey:"):
+                api_key = line.split(":", 1)[1].strip()
+                return api_key.strip('"\'')
+
+    return ""
+
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        immich_server_url=os.getenv("IMMICH_SERVER_URL", "http://localhost:2283"),
+        immich_api_key=get_existing_immich_api_key(),
+    )
 
 
 @app.route("/api/albums", methods=["POST"])
@@ -93,32 +129,33 @@ def get_albums():
         return jsonify({"error": str(e)}), 500
 
 
-# @app.route("/api/thumbnail", methods=["GET"])
-# def get_thumbnail():
-#     server_url = request.args.get("server_url")
-#     api_key = request.args.get("api_key")
-#     asset_id = request.args.get("asset_id")
+@app.route("/api/thumbnail", methods=["POST"])
+def get_thumbnail():
+    data = request.json or {}
 
-#     if not server_url or not api_key or not asset_id:
-#         return jsonify({"error": "server_url, api_key, and asset_id are required"}), 400
+    server_url = data.get("server_url") or os.getenv("IMMICH_SERVER_URL", "http://localhost:2283")
+    api_key = data.get("api_key")
+    asset_id = data.get("asset_id")
 
-#     try:
-#         headers = {
-#             "x-api-key": api_key
-#         }
+    if not api_key or not asset_id:
+        return jsonify({"error": "api_key and asset_id are required"}), 400
 
-#         response = requests.get(
-#             f"{server_url}/api/assets/{asset_id}/thumbnail",
-#             headers=headers
-#         )
+    try:
+        response = requests.get(
+            f"{server_url}/api/assets/{asset_id}/thumbnail",
+            headers={"x-api-key": api_key},
+            timeout=30,
+        )
 
-#         if response.status_code != 200:
-#             return jsonify({"error": f"Failed to fetch thumbnail: {response.status_code}"}), response.status_code
+        if response.status_code != 200:
+            return jsonify({"error": f"Failed to fetch thumbnail: {response.status_code}"}), response.status_code
 
-#         return response.content, response.status_code, {'Content-Type': response.headers.get('Content-Type', 'image/jpeg')}
+        return response.content, response.status_code, {
+            "Content-Type": response.headers.get("Content-Type", "image/jpeg")
+        }
 
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/create-immich-configuration", methods=["POST"])
@@ -148,7 +185,7 @@ def create_immich_configuration():
             output_dir = base_dir.parent / "client-data" / "immichframe" / "Config"
         
         output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / "Settings.yaml"
+        output_path = get_immichframe_settings_path(output_dir)
 
         with open(template_path, "r", encoding="utf-8") as template_file:
             lines = template_file.readlines()
@@ -157,8 +194,8 @@ def create_immich_configuration():
         skip_album_section = False
         for line in lines:
             stripped = line.strip()
-            if line.lstrip().startswith("ImmichServerUrl:"):
-                output_lines.append(f'    ImmichServerUrl: "{server_url}"\n')
+            if line.lstrip().startswith("- ImmichServerUrl:"):
+                output_lines.append(f'  - ImmichServerUrl: "{server_url}"\n')
                 continue
             if line.lstrip().startswith("ApiKey:"):
                 output_lines.append(f'    ApiKey: "{api_key}"\n')

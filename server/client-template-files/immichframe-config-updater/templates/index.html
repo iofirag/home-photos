@@ -48,7 +48,7 @@
 
 <div>
     <label>API Key:</label><br>
-    <input id="api_key" type="text" placeholder="Enter your Immich API key">
+    <input id="api_key" type="text" placeholder="Enter your Immich API key" value="{{ immich_api_key }}">
 </div>
 
 <button onclick="loadAlbums()">Load Albums</button>
@@ -62,7 +62,7 @@
 
 <script>
 
-const serverUrl = `http://${location.hostname}:2283`;
+const serverUrl ="{{ immich_server_url }}";
 
 async function loadAlbums() {
     const apiKey = document.getElementById("api_key").value;
@@ -104,8 +104,7 @@ async function loadAlbums() {
             const checkboxId = `album-checkbox-${album.id}`;
             let thumbnailHtml = "";
             if (album.albumThumbnailAssetId) {
-                const thumbnailUrl = `http://${location.hostname}:2283/api/assets/${album.albumThumbnailAssetId}/thumbnail`;
-                thumbnailHtml = `<br><img src="${thumbnailUrl}" alt="Album thumbnail" class="album-thumbnail" data-asset-id="${album.albumThumbnailAssetId}">`;
+                thumbnailHtml = `<br><img alt="Album thumbnail" class="album-thumbnail" data-asset-id="${album.albumThumbnailAssetId}">`;
             }
 
             div.innerHTML = `
@@ -118,10 +117,41 @@ async function loadAlbums() {
             `;
 
             albumsDiv.appendChild(div);
+
+            const thumbnail = div.querySelector(".album-thumbnail");
+            if (thumbnail) {
+                loadThumbnail(thumbnail, apiKey, album.albumThumbnailAssetId);
+            }
         });
 
     } catch (err) {
         status.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+    }
+}
+
+async function loadThumbnail(image, apiKey, assetId) {
+    try {
+        const res = await fetch("/api/thumbnail", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                server_url: serverUrl,
+                api_key: apiKey,
+                asset_id: assetId
+            })
+        });
+
+        if (!res.ok) {
+            image.remove();
+            return;
+        }
+
+        const thumbnail = await res.blob();
+        image.src = URL.createObjectURL(thumbnail);
+    } catch (err) {
+        image.remove();
     }
 }
 
