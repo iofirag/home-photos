@@ -1,10 +1,9 @@
-/client/immich/
-/client/client-data/
+**/client-data/
+**/cache
 
 *.env
 *.pem
-
-/server/cache
+*.tar
 
 **/*/__pycache__/
 **/*/*.pyc
