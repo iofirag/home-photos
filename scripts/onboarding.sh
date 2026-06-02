@@ -14,15 +14,18 @@ WIFI_CONNECT_NAME="wifi-connect"
 CHECK_URL="https://clients3.google.com/generate_204"
 RESET_NETWORK_DELAY=30
 INTERVAL=5
-SERVER_URL="10.0.0.1:5000" # "aghaiofir.win"
-CLIENT_TEMPLATE_ARCHIVE="client-template-files.tar.gz"
+SERVER_URL="${SERVER_URL:-10.0.0.1:5000}" # "aghaiofir.win"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-USB_MOUNT_DIR="${USB_MOUNT_DIR:-/media/pi/PENDRIVE}"
-CLIENT_APP_DIR="${CLIENT_APP_DIR:-$USB_MOUNT_DIR/client-app}"
-PROVISION_MARKER="$CLIENT_APP_DIR/.provisioned"
+USB_MOUNT_ROOT="${USB_MOUNT_ROOT:-/media/home-photos}"
+USB_DEVICE="${USB_DEVICE:-}"
+USB_MOUNT_DIR="${USB_MOUNT_DIR:-}"
+CLIENT_APP_DIR="${CLIENT_APP_DIR:-}"
+PROVISION_MARKER=""
 POSTGRES_UID="999"
 POSTGRES_GID="999"
 LOG_FILE="${ONBOARDING_LOG_FILE:-/var/log/home-photos-onboarding.log}"
+USB_WAIT_INTERVAL="${USB_WAIT_INTERVAL:-5}"
+SUPPORTED_USB_FILESYSTEMS="${SUPPORTED_USB_FILESYSTEMS:-ext2 ext3 ext4 xfs btrfs}"
 APP_STARTED=false
 
 init_logging() {
@@ -58,6 +61,56 @@ require_command() {
   fi
 }
 
+path_is_mounted() {
+  local mount_dir="$1"
+  findmnt -rn --target "$mount_dir" >/dev/null 2>&1
+}
+
+sanitize_mount_name() {
+  basename "$1" | tr -c '[:alnum:]_.-' '-'
+}
+
+filesystem_is_supported() {
+  local fs_type="$1"
+  local supported_fs
+
+  for supported_fs in $SUPPORTED_USB_FILESYSTEMS; do
+    if [ "$fs_type" = "$supported_fs" ]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+server_base_url() {
+  case "$SERVER_URL" in
+    http://*|https://*)
+      printf '%s\n' "${SERVER_URL%/}"
+      ;;
+    *)
+      printf 'http://%s\n' "${SERVER_URL%/}"
+      ;;
+  esac
+}
+
+first_removable_partition() {
+  local device type removable transport fs_type
+
+  while read -r device type removable transport fs_type; do
+    if [ "$type" != "part" ]; then
+      continue
+    fi
+
+    if [ "$removable" = "1" ] || [ "$transport" = "usb" ]; then
+      printf '%s\n' "$device"
+      return 0
+    fi
+  done < <(lsblk -nrpo NAME,TYPE,RM,TRAN,FSTYPE)
+
+  return 1
+}
+
 chown_or_warn() {
   local owner="$1"
   local path="$2"
@@ -78,21 +131,68 @@ chown_or_warn() {
 }
 
 ensure_client_storage_mounted() {
-  case "$CLIENT_APP_DIR/" in
-    "$USB_MOUNT_DIR"/*)
-      if [ ! -d "$USB_MOUNT_DIR" ]; then
-        log "USB mount directory does not exist: $USB_MOUNT_DIR"
-        log "Create and mount it first: sudo mkdir -p $USB_MOUNT_DIR && sudo mount /dev/sda1 $USB_MOUNT_DIR"
-        exit 1
-      fi
+  local fs_type mount_name mounted_at selected_device
 
-      if ! awk -v mount_dir="$USB_MOUNT_DIR" '$2 == mount_dir { found = 1 } END { exit found ? 0 : 1 }' /proc/mounts; then
-        log "USB drive is not mounted at $USB_MOUNT_DIR"
-        log "Mount it first: sudo mount /dev/sda1 $USB_MOUNT_DIR"
-        exit 1
+  while true; do
+    selected_device="${USB_DEVICE:-}"
+
+    if [ -z "$selected_device" ]; then
+      selected_device="$(first_removable_partition || true)"
+    fi
+
+    if [ -z "$selected_device" ]; then
+      log "Waiting for USB pendrive..."
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
+
+    if [ ! -b "$selected_device" ]; then
+      log "Configured USB device is not a block device: $selected_device"
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
+
+    fs_type="$(lsblk -nrpo FSTYPE "$selected_device" | head -n 1)"
+    if [ -z "$fs_type" ]; then
+      log "USB device has no filesystem: $selected_device"
+      log "Format the pendrive as ext4 before handing it to a client."
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
+
+    if ! filesystem_is_supported "$fs_type"; then
+      log "Unsupported USB filesystem '$fs_type' on $selected_device"
+      log "Use one of: $SUPPORTED_USB_FILESYSTEMS"
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
+
+    mounted_at="$(findmnt -nr -o TARGET --source "$selected_device" | head -n 1 || true)"
+    if [ -n "$mounted_at" ]; then
+      if [ -n "$USB_MOUNT_DIR" ] && [ "$USB_MOUNT_DIR" != "$mounted_at" ]; then
+        log "USB device is already mounted at $mounted_at; using that path instead of $USB_MOUNT_DIR"
       fi
-      ;;
-  esac
+      USB_MOUNT_DIR="$mounted_at"
+    else
+      mount_name="$(sanitize_mount_name "$selected_device")"
+      USB_MOUNT_DIR="${USB_MOUNT_DIR:-$USB_MOUNT_ROOT/$mount_name}"
+      sudo mkdir -p "$USB_MOUNT_DIR"
+      log "Mounting USB pendrive $selected_device at $USB_MOUNT_DIR"
+      sudo mount "$selected_device" "$USB_MOUNT_DIR"
+    fi
+
+    if ! path_is_mounted "$USB_MOUNT_DIR"; then
+      log "USB mount is not active yet: $USB_MOUNT_DIR"
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
+
+    CLIENT_APP_DIR="${CLIENT_APP_DIR:-$USB_MOUNT_DIR/client-app}"
+    PROVISION_MARKER="$CLIENT_APP_DIR/.provisioned"
+    log "USB storage ready: $USB_MOUNT_DIR"
+    log "Client app directory: $CLIENT_APP_DIR"
+    return 0
+  done
 }
 
 trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
@@ -106,6 +206,9 @@ check_requirements() {
   require_command docker
   require_command ip
   require_command awk
+  require_command findmnt
+  require_command lsblk
+  require_command mount
 }
 
 start_hotspot() {
@@ -115,7 +218,7 @@ start_hotspot() {
   fi
 
   log "Starting WiFi hotspot (wifi-connect)..."
-  docker run -it --rm \
+  docker run --rm \
     --name "$WIFI_CONNECT_NAME" \
     --network host \
     --privileged \
@@ -144,13 +247,16 @@ stop_hotspot() {
 # }
 
 download_application_files() {
+  local archive_path
+
+  archive_path="$(mktemp)"
   log "Downloading application files..."
-  curl -fL -o "$CLIENT_TEMPLATE_ARCHIVE" "http://${SERVER_URL%/}/download-client-template-files"
+  curl -fL -o "$archive_path" "$(server_base_url)/download-client-template-files"
   log "Extracting application files..."
   sudo mkdir -p "$CLIENT_APP_DIR"
-  sudo tar --no-same-owner --no-same-permissions -xzf "$CLIENT_TEMPLATE_ARCHIVE" -C "$CLIENT_APP_DIR" --strip-components=1
+  sudo tar --no-same-owner --no-same-permissions -xzf "$archive_path" -C "$CLIENT_APP_DIR" --strip-components=1
   chown_or_warn "$(id -u):$(id -g)" "$CLIENT_APP_DIR" "client app files"
-  rm -f "$CLIENT_TEMPLATE_ARCHIVE"
+  rm -f "$archive_path"
 }
 
 create_client_tunnel() {
@@ -162,7 +268,7 @@ create_client_tunnel() {
   RESPONSE_FILE=$(mktemp)
 
   log "Creating client tunnel with MAC address: $MAC_ADDRESS"
-  curl -fsS -X POST "http://${SERVER_URL%/}/create-client-tunnel" \
+  curl -fsS -X POST "$(server_base_url)/create-client-tunnel" \
     -H "Content-Type: application/json" \
     -d "{\"device_id\": \"$DEVICE_ID\"}" \
     -o "$RESPONSE_FILE" \
@@ -243,7 +349,6 @@ main() {
   init_logging
   log "Starting onboarding script"
   log "Log file: $LOG_FILE"
-  log "Client app directory: $CLIENT_APP_DIR"
   check_requirements
   ensure_client_storage_mounted
 

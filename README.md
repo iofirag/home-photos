@@ -53,11 +53,19 @@ what is the minimal OS should i install on the device?
 
 
 # How to run:
-copy `/scripts` to client
-`cd /scripts`
-`sudo sh install.sh`
-(disconnect from internet)
-on boot -> `sudo sh onboarding.sh`
+Install on a prepared Raspberry Pi from the internet:
+`curl -fsSL https://raw.githubusercontent.com/iofirag/home-photos/main/scripts/install.sh | sudo bash`
+
+The installer downloads `onboarding.sh`, installs it at `/usr/local/bin/home-photos-onboarding.sh`, and creates `home-photos-onboarding.service` so onboarding starts on boot.
+
+For client delivery:
+1. Run the install command while preparing the Raspberry Pi.
+2. Shut down the Raspberry Pi.
+3. Give the client an ext4-formatted pendrive.
+4. The client inserts the pendrive and powers on the Raspberry Pi.
+5. The onboarding service waits for the pendrive, mounts it, and saves all client app files/data under `<pendrive>/client-app`.
+
+logs -> `sudo tail -f /var/log/home-photos-onboarding.log`
 navigate to `http://home-photos:8080,8081,2283`
 
 # reset device
@@ -72,6 +80,8 @@ reset -> `sudo sh reset.sh`
 
 
 #### TODO:
+save docker logs to journal instead of to the os # docker configuration for production
+download install from network
 V store all app in 1 directory
 V uploading images to usb or run from usb
 V (using without ip) - http://home-photos:<port>
