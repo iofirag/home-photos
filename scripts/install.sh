@@ -3,6 +3,10 @@
 # This script initializes the environment for running the wifi-connect Docker container.
 # It installs necessary dependencies, sets up NetworkManager, and builds the Docker image.
 
+ONBOARDING_URL="https://raw.githubusercontent.com/iofirag/home-photos/main/scripts/onboarding.sh"
+ONBOARDING_BIN="/usr/local/bin/home-photos-onboarding.sh"
+ONBOARDING_SERVICE="/etc/systemd/system/home-photos-onboarding.service"
+
 # Update package lists
 sudo apt-get update
 
@@ -56,6 +60,30 @@ sudo docker build -t wifi-connect -f Dockerfile.template .
 # Remove the cloned wifi-connect directory after Docker image is built
 cd ..
 rm -rf wifi-connect
+
+echo "Installing onboarding service..."
+sudo curl -fL "$ONBOARDING_URL" -o "$ONBOARDING_BIN"
+sudo chmod +x "$ONBOARDING_BIN"
+
+sudo tee "$ONBOARDING_SERVICE" >/dev/null <<EOF
+[Unit]
+Description=Home Photos onboarding
+After=network-online.target NetworkManager.service docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=simple
+ExecStart=$ONBOARDING_BIN
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable home-photos-onboarding.service
+sudo systemctl start home-photos-onboarding.service
 
 # Check supported WiFi modes (for debugging)
 echo "Setup completed successfully!"
