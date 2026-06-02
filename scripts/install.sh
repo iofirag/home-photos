@@ -9,6 +9,8 @@ ONBOARDING_URL="${ONBOARDING_URL:-https://raw.githubusercontent.com/iofirag/home
 ONBOARDING_BIN="/usr/local/bin/home-photos-onboarding.sh"
 ONBOARDING_SERVICE="/etc/systemd/system/home-photos-onboarding.service"
 ONBOARDING_ENV="/etc/default/home-photos-onboarding"
+DOCKER_DAEMON_CONFIG="/etc/docker/daemon.json"
+JOURNALD_CONFIG="/etc/systemd/journald.conf.d/home-photos-volatile.conf"
 WIFI_CONNECT_REPO="${WIFI_CONNECT_REPO:-https://github.com/robot-com-projects/wifi-connect.git}"
 WIFI_CONNECT_BRANCH="${WIFI_CONNECT_BRANCH:-fix/dockerfile}"
 
@@ -22,6 +24,48 @@ WORK_DIR="$(mktemp -d)"
 
 cleanup() {
   rm -rf "$WORK_DIR"
+}
+
+configure_docker_logging() {
+  local docker_config_tmp
+
+  echo "Configuring Docker logs to use volatile journald storage..."
+  mkdir -p /etc/docker /etc/systemd/journald.conf.d
+
+  tee "$JOURNALD_CONFIG" >/dev/null <<EOF
+[Journal]
+Storage=volatile
+RuntimeMaxUse=256M
+RuntimeMaxFileSize=32M
+MaxRetentionSec=1day
+EOF
+
+  docker_config_tmp="$(mktemp)"
+  if [ -f "$DOCKER_DAEMON_CONFIG" ]; then
+    cp "$DOCKER_DAEMON_CONFIG" "$DOCKER_DAEMON_CONFIG.bak.$(date +%Y%m%d%H%M%S)"
+    jq '. + {
+      "log-driver": "journald"
+    } + {
+      "log-opts": ((."log-opts" // {}) + {
+        "tag": "{{.Name}}/{{.ID}}"
+      })
+    }' "$DOCKER_DAEMON_CONFIG" > "$docker_config_tmp"
+  else
+    tee "$docker_config_tmp" >/dev/null <<EOF
+{
+  "log-driver": "journald",
+  "log-opts": {
+    "tag": "{{.Name}}/{{.ID}}"
+  }
+}
+EOF
+  fi
+
+  install -m 0644 "$docker_config_tmp" "$DOCKER_DAEMON_CONFIG"
+  rm -f "$docker_config_tmp"
+
+  systemctl restart systemd-journald
+  systemctl restart docker
 }
 
 trap cleanup EXIT
@@ -40,6 +84,7 @@ apt-get install -y \
   ca-certificates \
   curl \
   git \
+  jq \
   tar
 
 # Reconfigure NetworkManager enable & running
@@ -63,6 +108,8 @@ if docker compose version >/dev/null 2>&1; then
 else
   echo "Warning: Docker Compose plugin was not detected after Docker installation."
 fi
+
+configure_docker_logging
 
 if id "$RUN_USER" >/dev/null 2>&1; then
   usermod -aG docker "$RUN_USER"

@@ -66,6 +66,7 @@ For client delivery:
 5. The onboarding service waits for the pendrive, mounts it, and saves all client app files/data under `<pendrive>/client-app`.
 
 logs -> `sudo tail -f /var/log/home-photos-onboarding.log`
+docker logs -> `sudo journalctl CONTAINER_NAME=immich-server -f`
 navigate to `http://home-photos:8080,8081,2283`
 
 # reset device
@@ -80,8 +81,8 @@ reset -> `sudo sh reset.sh`
 
 
 #### TODO:
-save docker logs to journal instead of to the os # docker configuration for production
-download install from network
+V save docker logs to volatile journald instead of persistent Docker json logs
+V download install from network
 V store all app in 1 directory
 V uploading images to usb or run from usb
 V (using without ip) - http://home-photos:<port>
