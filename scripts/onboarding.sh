@@ -25,7 +25,7 @@ POSTGRES_UID="999"
 POSTGRES_GID="999"
 LOG_FILE="${ONBOARDING_LOG_FILE:-/var/log/home-photos-onboarding.log}"
 USB_WAIT_INTERVAL="${USB_WAIT_INTERVAL:-5}"
-SUPPORTED_USB_FILESYSTEMS="${SUPPORTED_USB_FILESYSTEMS:-ext2 ext3 ext4 xfs btrfs}"
+SUPPORTED_USB_FILESYSTEMS="${SUPPORTED_USB_FILESYSTEMS:-ext4}"
 APP_STARTED=false
 
 init_logging() {
@@ -130,6 +130,24 @@ chown_or_warn() {
   log "USB filesystems like FAT, exFAT, and NTFS may not support Linux ownership. Use ext4 for Docker/Postgres data if containers fail to start."
 }
 
+verify_client_storage_ready() {
+  local available_kb available_mb test_file
+
+  sudo mkdir -p "$CLIENT_APP_DIR"
+
+  available_kb="$(df -Pk "$USB_MOUNT_DIR" | awk 'NR == 2 {print $4}')"
+  available_mb=$((available_kb / 1024))
+
+  test_file="$CLIENT_APP_DIR/.write-test"
+  if ! sudo sh -c 'printf test > "$1"' sh "$test_file"; then
+    log "USB pendrive is mounted but not writable: $USB_MOUNT_DIR"
+    return 1
+  fi
+  sudo rm -f "$test_file"
+
+  log "USB storage passed validation: ext4-compatible, writable, ${available_mb}MB free"
+}
+
 ensure_client_storage_mounted() {
   local fs_type mount_name mounted_at selected_device
 
@@ -189,6 +207,10 @@ ensure_client_storage_mounted() {
 
     CLIENT_APP_DIR="${CLIENT_APP_DIR:-$USB_MOUNT_DIR/client-app}"
     PROVISION_MARKER="$CLIENT_APP_DIR/.provisioned"
+    if ! verify_client_storage_ready; then
+      sleep "$USB_WAIT_INTERVAL"
+      continue
+    fi
     log "USB storage ready: $USB_MOUNT_DIR"
     log "Client app directory: $CLIENT_APP_DIR"
     return 0
@@ -209,6 +231,7 @@ check_requirements() {
   require_command findmnt
   require_command lsblk
   require_command mount
+  require_command df
 }
 
 start_hotspot() {
