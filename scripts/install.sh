@@ -6,7 +6,9 @@
 set -Eeuo pipefail
 
 ONBOARDING_URL="${ONBOARDING_URL:-https://raw.githubusercontent.com/iofirag/home-photos/main/scripts/onboarding.sh}"
+HARD_RESET_URL="${HARD_RESET_URL:-https://raw.githubusercontent.com/iofirag/home-photos/main/scripts/hard-reset.sh}"
 ONBOARDING_BIN="/usr/local/bin/home-photos-onboarding.sh"
+HARD_RESET_BIN="/usr/local/bin/home-photos-hard-reset.sh"
 ONBOARDING_SERVICE="/etc/systemd/system/home-photos-onboarding.service"
 ONBOARDING_ENV="/etc/default/home-photos-onboarding"
 DOCKER_DAEMON_CONFIG="/etc/docker/daemon.json"
@@ -125,6 +127,11 @@ cd "$WORK_DIR/wifi-connect"
 echo "Building and deploying the wifi-connect Docker container..."
 docker build -t wifi-connect -f Dockerfile.template .
 
+echo "Installing hard reset script..."
+curl -fsSL "$HARD_RESET_URL" -o "$HARD_RESET_BIN.tmp"
+chmod +x "$HARD_RESET_BIN.tmp"
+mv "$HARD_RESET_BIN.tmp" "$HARD_RESET_BIN"
+
 echo "Installing onboarding service..."
 curl -fsSL "$ONBOARDING_URL" -o "$ONBOARDING_BIN.tmp"
 chmod +x "$ONBOARDING_BIN.tmp"
@@ -160,6 +167,7 @@ systemctl restart home-photos-onboarding.service
 
 # Check supported WiFi modes (for debugging)
 echo "Setup completed successfully!"
+echo "To remove the app later, run: sudo $HARD_RESET_BIN"
 
 
 
