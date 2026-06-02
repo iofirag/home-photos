@@ -67,7 +67,7 @@ path_is_mounted() {
 }
 
 sanitize_mount_name() {
-  basename "$1" | tr -c '[:alnum:]_.-' '-'
+  printf '%s' "$(basename "$1")" | tr -c '[:alnum:]_.-' '-'
 }
 
 filesystem_is_supported() {
