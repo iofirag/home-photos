@@ -70,7 +70,7 @@ docker logs -> `sudo journalctl CONTAINER_NAME=immich-server -f`
 navigate to `http://home-photos:8080,8081,2283`
 
 # reset device
-reset -> `sudo sh reset.sh`
+reset -> `sudo /usr/local/bin/home-photos-hard-reset.sh`
 
 
 
