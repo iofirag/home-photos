@@ -140,8 +140,8 @@ mv "$ONBOARDING_BIN.tmp" "$ONBOARDING_BIN"
 tee "$ONBOARDING_ENV" >/dev/null <<EOF
 # Optional overrides for Home Photos onboarding.
 # SERVER_URL="https://example.com"
-# USB_MOUNT_ROOT="/media/home-photos"
-# CLIENT_APP_DIR="/media/home-photos/<mounted-usb>/client-app"
+# USB_MOUNT_ROOT="/mnt/usb"
+# CLIENT_APP_DIR="/mnt/usb/<mounted-usb>/client-app"
 EOF
 
 tee "$ONBOARDING_SERVICE" >/dev/null <<EOF

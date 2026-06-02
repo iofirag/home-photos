@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLIENT_APP_DIR="${CLIENT_APP_DIR:-/client-app}"
-USB_MOUNT_ROOT="${USB_MOUNT_ROOT:-/media/home-photos}"
+USB_MOUNT_ROOT="${USB_MOUNT_ROOT:-/mnt/usb}"
 USB_DEVICE="${USB_DEVICE:-}"
 USB_MOUNT_DIR="${USB_MOUNT_DIR:-}"
 ONBOARDING_BIN="/usr/local/bin/home-photos-onboarding.sh"
