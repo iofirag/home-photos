@@ -78,6 +78,7 @@ services:
   immichframe-manager:
     container_name: immichframe-manager
     image: immich_frame_manager:latest
+    pull_policy: never
     build:
       context: ./ImmichFrame-Manager
     restart: unless-stopped

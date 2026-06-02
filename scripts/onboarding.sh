@@ -346,6 +346,15 @@ prepare_immichframe_manager_build_context() {
   git clone https://github.com/lbartuzi/ImmichFrame-Manager.git "$repo_dir"
 }
 
+ensure_immichframe_manager_image() {
+  if sudo docker image inspect immich_frame_manager:latest >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "Building ImmichFrame Manager Docker image..."
+  sudo docker compose build immichframe-manager
+}
+
 start_app() {
   log "Starting application..."
   if [ ! -d "$CLIENT_APP_DIR" ]; then
@@ -357,6 +366,7 @@ start_app() {
   (
     trap 'rm -rf "$CLIENT_APP_DIR/ImmichFrame-Manager"' EXIT
     cd "$CLIENT_APP_DIR"
+    ensure_immichframe_manager_image
     sudo docker compose up -d
   )
 }
