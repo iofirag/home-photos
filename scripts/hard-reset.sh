@@ -159,6 +159,14 @@ else
 	log "No Docker containers found"
 fi
 
+ALL_VOLUMES=$($DOCKER_CMD volume ls -q)
+if [ -n "$ALL_VOLUMES" ]; then
+	log "Deleting Docker volumes..."
+	$DOCKER_CMD volume rm -f $ALL_VOLUMES
+else
+	log "No Docker volumes found"
+fi
+
 ALL_IMAGES=$($DOCKER_CMD images -aq)
 if [ -n "$ALL_IMAGES" ]; then
 	log "Deleting Docker images..."
