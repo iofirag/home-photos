@@ -82,7 +82,7 @@ services:
       context: ./ImmichFrame-Manager
     restart: unless-stopped
     depends_on:
-      - ${IMMICHFRAME_CONTAINER_NAME}
+      - immichframe
     ports:
       - "8081:8099"
     volumes:
@@ -95,72 +95,8 @@ services:
       ADMIN_PASSWORD: 1234
       SETTINGS_FILE: /config/Settings.yml
       STATE_FILE: /data/state.yaml
-      IMMICHFRAME_CONTAINER: ${IMMICHFRAME_CONTAINER_NAME}
+      IMMICHFRAME_CONTAINER: immichframe
       ENABLE_DOCKER_RESTART: "true"
       SYNC_INTERVAL_SECONDS: "300"
       FLASK_HOST: 0.0.0.0
       FLASK_PORT: "8099"
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
-    depends_on:
-      - ${IMMICH_CONTAINER_NAME}
-    # ports:
-    #   - "8080:80" # testing only
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - caddy
-
-  # immich-kiosk: # Works
-  #   image: ghcr.io/damongolding/immich-kiosk:latest
-  #   container_name: immich-kiosk
-  #   restart: unless-stopped
-  #   tty: true
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     KIOSK_IMMICH_API_KEY: ${KIOSK_IMMICH_API_KEY}
-  #     KIOSK_IMMICH_URL: ${KIOSK_IMMICH_URL}
-  #   volumes:
-  #     - ./immich-kiosk/config:/config
-  #   ports:
-  #     - 3000:3000
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     database:
-  #       condition: service_healthy
-  #     immich-server:
-  #       condition: service_started
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 10s
-
-  # immich-machine-learning: # Not Tested
-  #   image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
-  #   container_name: immich_machine_learning
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./immich/model-cache:/cache
-  #   healthcheck:
-  #     disable: false
-
-

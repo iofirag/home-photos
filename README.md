@@ -72,11 +72,10 @@ reset -> `sudo sh reset.sh`
 
 
 #### TODO:
-store all app in 1 directory
-uploading images to usb
-How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
-reverse proxy instead of caddy ?
+V store all app in 1 directory
+V uploading images to usb or run from usb
 V (using without ip) - http://home-photos:<port>
+How to Protect ssh-d1.aghaiofir.win with Cloudflare Access
 
 ###### OLD ######
 onboarding step:

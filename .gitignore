@@ -6,7 +6,8 @@
 *.tar
 
 **/*/__pycache__/
-**/*/*.pyc
+*.pyc
+
 
 # cloudflared/*.pem
 # cloudflared/*.yml

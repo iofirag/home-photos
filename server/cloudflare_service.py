@@ -1,8 +1,6 @@
 import re
 import json
-import shutil
 import requests
-from pathlib import Path
 from config import settings
 
 

@@ -23,22 +23,31 @@ sudo systemctl start NetworkManager
 sudo systemctl stop dnsmasq
 sudo systemctl disable dnsmasq
 
-# Install Docker using the official script
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
+# Install Docker using the official script only when it is missing
+if command -v docker >/dev/null 2>&1; then
+  echo "Docker is already installed: $(docker --version)"
+else
+  echo "Docker is not installed. Installing Docker..."
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sudo sh get-docker.sh
+  rm -f get-docker.sh
+fi
 
-# Remove Docker installation script after use
-rm -f get-docker.sh
+if docker compose version >/dev/null 2>&1; then
+  echo "Docker Compose is available: $(docker compose version)"
+else
+  echo "Warning: Docker Compose plugin was not detected after Docker installation."
+fi
+
+sudo usermod -aG docker "$USER"
 
 # Remove any existing wifi-connect directory to avoid duplication
 rm -rf wifi-connect
-# Clone the (Fixed) Balena wifi-connect repository
-git clone https://github.com/balena-os/wifi-connect.git
+# Clone the fixed wifi-connect branch
+# If the upstream repo fixes the Dockerfile issue, use this instead:
+# git clone https://github.com/balena-os/wifi-connect.git
+git clone --branch fix/dockerfile --single-branch https://github.com/robot-com-projects/wifi-connect.git
 cd wifi-connect
-git remote add robot-com-projects https://github.com/robot-com-projects/wifi-connect.git
-git fetch robot-com-projects
-git checkout -b fix/dockerfile robot-com-projects/fix/dockerfile
 
 # Build and deploy the Docker container
 echo "Building and deploying the wifi-connect Docker container..."
