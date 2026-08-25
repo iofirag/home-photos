@@ -127,3 +127,9 @@ immich albums slide show service.
 ssh vboxuser@10.0.0.144
 debugging: `docker compose up --build -d`
 `aghaiofir.win`
+
+
+#################
+installation:  
+when doing the install store the uuid of the usb stick in the `/etc/fstab` like:  
+`UUID=84309235-0413-4374-a056-99e440edf23f  /mnt/my_data  ext4  nofail,defaults  0  2`
