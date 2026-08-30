@@ -92,8 +92,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       TZ: Asia/Jerusalem
-      ADMIN_USERNAME: admin
-      ADMIN_PASSWORD: 1234
+      ADMIN_USERNAME: ${IMMICHFRAME_MANAGER_ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${IMMICHFRAME_MANAGER_ADMIN_PASSWORD}
       SETTINGS_FILE: /config/Settings.yml
       STATE_FILE: /data/state.yaml
       IMMICHFRAME_CONTAINER: ${IMMICHFRAME_CONTAINER_NAME}
